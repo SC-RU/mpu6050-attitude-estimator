@@ -28,14 +28,18 @@ void setup()
   gyroBias = calibrateGyro();
 
   Serial.println("Calibration complete.");
-  
+
   Serial.println("MPU6050 IMU awake.\n");
 }
 
-// bool hasRan = false;
+bool hasRan = false;
 
 void loop()
 {
+  if (hasRan)
+  {
+    return;
+  }
   uint32_t currentTime = micros();
 
   // If the time elapsed since the last loop is less than the sample rate, skip this loop
@@ -44,8 +48,6 @@ void loop()
     return;
   }
 
-  // Convert time elapsed to seconds
-  float dt = (currentTime - lastLoopTime) / 1e6f;
   lastLoopTime = currentTime;
 
   AccelData accel = readRawAccel();
@@ -59,23 +61,23 @@ void loop()
   float gyDPS = rawGyroToDPS(gyro.y, gyroBias.y);
   float gzDPS = rawGyroToDPS(gyro.z, gyroBias.z);
 
-  // Serial.print("AX (g): ");
-  // Serial.print(axG);
+  Serial.print("AX (g): ");
+  Serial.print(axG);
 
-  // Serial.print(" AY (g): ");
-  // Serial.print(ayG);
+  Serial.print(" AY (g): ");
+  Serial.print(ayG);
 
-  // Serial.print(" AZ (g): ");
-  // Serial.println(azG);
+  Serial.print(" AZ (g): ");
+  Serial.println(azG);
 
-  // Serial.print("GX (dps): ");
-  // Serial.print(gxDPS);
+  Serial.print("GX (dps): ");
+  Serial.print(gxDPS);
 
-  // Serial.print(" GY (dps): ");
-  // Serial.print(gyDPS);
+  Serial.print(" GY (dps): ");
+  Serial.print(gyDPS);
 
-  // Serial.print(" GZ (dps): ");
-  // Serial.println(gzDPS);
+  Serial.print(" GZ (dps): ");
+  Serial.println(gzDPS);
 
-  // hasRan = true;
+  hasRan = true;
 }

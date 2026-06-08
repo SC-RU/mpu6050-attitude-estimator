@@ -23,3 +23,13 @@ Biases are computed as:
 bias = average(raw readings)
 
 Expected output after calibration is near 0 dps.
+
+## Output Conversion
+
+Accelerometer:
+
+raw -> g
+
+Gyroscope:
+
+raw -> dps (degrees per second)

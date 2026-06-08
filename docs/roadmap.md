@@ -7,16 +7,18 @@
 - Gyroscope calibration
 - DLPF configuration
 - Fixed-rate sampling
-
-## In Progress
-
 - Roll estimation
 - Pitch estimation
+- Gyroscope integration
+- Complementary filtering
 
 ## Planned
 
-- Complementary filter
-- Quaternion attitude estimation
+- Improved attitude initialization
+- Real-time visualization
+- Data logging
 - STM32 migration
 - FreeRTOS integration
-- Data logging
+- Quaternion attitude estimation
+- Madgwick filter
+- Motor control integration

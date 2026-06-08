@@ -1,5 +1,37 @@
 # Software Architecture
 
+## Data Flow
+
+```
++-----------+
+|  MPU6050  |
++-----------+
+      |
+      v
++-------------+
+| Calibration |
++-------------+
+      |
+      v
++------------+
+|  Attitude  |
+| Estimation |
++------------+
+      |
+      v
++---------------+
+| Complementary |
+|    Filter     |
++---------------+
+      |
+      v
++-----------+
+| Telemetry |
++-----------+
+```
+
+Sensor data flows from the MPU6050 module through calibration and attitude estimation before being fused by the complementary filter and transmitted through the telemetry interface.
+
 The project is divided into three modules:
 
 ## MPU6050
@@ -28,6 +60,20 @@ Files:
 
 - Calibration.h
 - Calibration.cpp
+
+## Attitude
+
+Responsible for:
+
+- Accelerometer attitude estimation
+- Gyroscope integration
+- Complementary filtering
+- Initial attitude estimation
+
+Files:
+
+- Attitude.h
+- Attitude.cpp
 
 ## Main Application
 

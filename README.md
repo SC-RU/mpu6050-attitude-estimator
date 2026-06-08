@@ -2,9 +2,9 @@
 
 ## Overview
 
-This project focuses on bringing up and validating an MPU6050 inertial measurement unit (IMU) using an Arduino Nano Every. The goal was to communicate with the sensor at the register level, configure its operating modes, calibrate both the accelerometer and gyroscope, and convert raw sensor readings into meaningful physical units.
+This project implements a complete inertial measurement unit (IMU) bring-up and attitude estimation pipeline using an MPU6050 and an Arduino Nano Every.
 
-Rather than relying on third-party MPU6050 libraries, all sensor communication, configuration, and data acquisition were implemented directly through I2C register reads and writes using the MPU6050 datasheet and register map.
+Rather than relying on third-party libraries, all sensor communication, configuration, calibration, and attitude estimation are implemented from scratch using direct I2C register access and the MPU6050 datasheet.
 
 Current capabilities include:
 
@@ -12,10 +12,12 @@ Current capabilities include:
 * Accelerometer calibration
 * Gyroscope calibration
 * Raw sensor data acquisition
-* Conversion of accelerometer readings to g and m/s²
-* Conversion of gyroscope readings to degrees per second (dps)
-* Noise reduction using the MPU6050 digital low-pass filter (DLPF)
-* Verification of sensor stability and bias correction
+* Physical unit conversion
+* Roll and pitch estimation
+* Gyroscope attitude integration
+* Complementary filtering for sensor fusion
+* Fixed-rate sampling and timing control
+* Modular software architecture
 
 ---
 
@@ -101,6 +103,23 @@ Values close to zero while stationary indicate successful calibration.
 
 ---
 
+## Attitude Estimation
+
+Roll and pitch are estimated from accelerometer measurements using trigonometric relationships.
+
+A gyroscope attitude estimate is maintained by integrating angular velocity over time.
+
+A complementary filter combines both estimates:
+
+Filtered Angle = α × Gyroscope Estimate + (1 - α) × Accelerometer Estimate
+
+This provides:
+
+- Short-term stability from the gyroscope
+- Long-term drift correction from the accelerometer
+
+---
+
 ## Sensor Configuration
 
 ### Accelerometer
@@ -145,16 +164,25 @@ It also served as a foundation for future projects involving sensor fusion, atti
 
 ## Future Work
 
-Planned extensions include:
+Immediate
 
-* Roll and pitch estimation
-* Real-time orientation tracking
-* Complementary filtering
-* Sensor fusion
-* Kalman filtering
-* Attitude estimation
-* Migration to STM32 hardware
-* FreeRTOS integration
+- Improved attitude initialization
+- Real-time roll and pitch visualization
+- Data logging
+
+Near-term
+
+- Migration to STM32 hardware
+- Higher-rate sampling and performance optimization
+- FreeRTOS task-based architecture
+
+Long-term
+
+- Quaternion attitude representation
+- Madgwick sensor fusion filter
+- Kalman filtering
+- 3D orientation tracking
+- Motor control integration
 
 ---
 

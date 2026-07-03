@@ -59,7 +59,6 @@ HAL_StatusTypeDef calculateAccelAttitude(
     return HAL_OK;
 }
 
-
 // -----------------------------------------------------------------------------
 // Gyroscope attitude estimation
 // -----------------------------------------------------------------------------
@@ -106,7 +105,6 @@ HAL_StatusTypeDef updateGyroAttitude(
     return HAL_OK;
 }
 
-
 // -----------------------------------------------------------------------------
 // Sensor fusion
 // -----------------------------------------------------------------------------
@@ -138,7 +136,6 @@ HAL_StatusTypeDef complementaryFilter(
 
     return HAL_OK;
 }
-
 
 // -----------------------------------------------------------------------------
 // Startup attitude initialization

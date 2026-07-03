@@ -111,6 +111,25 @@ typedef struct
     int16_t z;	///< Raw Z-axis angular velocity
 } GyroData;
 
+/**
+ * @brief   One complete raw sensor sample.
+ *
+ * @details Groups an accelerometer measurement, a
+ *          gyroscope measurement, and a timestamp
+ *          captured during the same application update cycle.
+ *
+ *          This structure is intended for queue-based data
+ *          transfer in the FreeRTOS version of the project.
+ *          It preserves the existing AccelData and GyroData
+ *          structures without changing the driver interface.
+ */
+typedef struct
+{
+    AccelData accel;
+    GyroData  gyro;
+    uint32_t  time_MS;
+} SensorSample_t;
+
 // -----------------------------------------------------------------------------
 // Low-level register interface
 // -----------------------------------------------------------------------------

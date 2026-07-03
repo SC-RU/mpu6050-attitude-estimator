@@ -21,7 +21,7 @@
 // Includes
 // -----------------------------------------------------------------------------
 
-#include "MPU6050.h"
+#include "mpu6050.h"
 
 // -----------------------------------------------------------------------------
 // Driver handle
@@ -52,7 +52,6 @@ HAL_StatusTypeDef writeRegister(uint8_t reg, uint8_t value)
                              HAL_MAX_DELAY);
 }
 
-
 HAL_StatusTypeDef readRegister(uint8_t reg, uint8_t *value)
 {
     // Read a single register from the MPU6050
@@ -72,7 +71,6 @@ HAL_StatusTypeDef readRegister(uint8_t reg, uint8_t *value)
                             HAL_MAX_DELAY);
 }
 
-
 // -----------------------------------------------------------------------------
 // Device initialization
 // -----------------------------------------------------------------------------
@@ -84,7 +82,6 @@ void MPU6050_SetI2C(I2C_HandleTypeDef *hi2c)
 
     mpu6050_i2c = hi2c;
 }
-
 
 bool verifyConnection(void)
 {
@@ -100,7 +97,6 @@ bool verifyConnection(void)
 
     return (whoami == MPU6050_ADDR);
 }
-
 
 bool initializeMPU6050(void)
 {
@@ -136,7 +132,6 @@ bool initializeMPU6050(void)
 
     return true;
 }
-
 
 HAL_StatusTypeDef wakeIMU(void)
 {
@@ -182,7 +177,6 @@ HAL_StatusTypeDef wakeIMU(void)
     return HAL_OK;
 }
 
-
 // -----------------------------------------------------------------------------
 // Sensor configuration & noise reduction
 // -----------------------------------------------------------------------------
@@ -195,7 +189,6 @@ HAL_StatusTypeDef setAccelConfig(void)
     return writeRegister(ACCEL_CONFIG, ACCEL_RANGE_2G);
 }
 
-
 HAL_StatusTypeDef setGyroConfig(void)
 {
     // Configure the gyroscope for
@@ -203,7 +196,6 @@ HAL_StatusTypeDef setGyroConfig(void)
 
     return writeRegister(GYRO_CONFIG, GYRO_RANGE_250DPS);
 }
-
 
 HAL_StatusTypeDef reduceNoise(void)
 {
@@ -232,7 +224,6 @@ HAL_StatusTypeDef reduceNoise(void)
 
     return HAL_OK;
 }
-
 
 // -----------------------------------------------------------------------------
 // Sensor acquisition
@@ -280,7 +271,6 @@ HAL_StatusTypeDef readRawAccel(AccelData *accel)
 
     return HAL_OK;
 }
-
 
 HAL_StatusTypeDef readRawGyro(GyroData *gyro)
 {

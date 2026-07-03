@@ -32,6 +32,9 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -54,7 +57,34 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+/**
+ * @brief       Transmits a null-terminated status or debug string over USART2.
+ *
+ * @details     This helper provides a simple project-wide UART print interface for
+ *              startup messages, fault reporting, and lightweight diagnostics.
+ *              The function validates the input pointer before calling the HAL UART
+ *              transmit routine.
+ *
+ * @param msg:  Pointer to a null-terminated character string to transmit.
+ */
 void uart_print(const char *msg);
+
+/**
+ * @brief   Reports minimum recorded stack headroom for each application task.
+ *
+ * @details Queries FreeRTOS for the stack high-water mark of SensorTask,
+ *          AttitudeTask, and TelemetryTask using their stored task handles.
+ *          The reported values are expressed in stack words, not bytes, and
+ *          represent the smallest amount of free stack each task has had since
+ *          startup. This function is intended for hardware validation and stack
+ *          sizing verification.
+ */
+#define CHECK_STACK_OVERFLOW_DEBUG 0
+#if CHECK_STACK_OVERFLOW_DEBUG
+
+void reportStackHighWaterMarks(void);
+
+#endif
 
 /* USER CODE END EFP */
 

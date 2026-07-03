@@ -4,12 +4,14 @@
 
 This document describes the software architecture of the STM32 Nucleo-F446RE implementation of the MPU6050 attitude-estimation project.
 
-The firmware is organized around STM32Cube-generated startup code, STM32 HAL peripheral drivers, and a modular application structure for the STM32F446RE. At a high level, the system repeatedly:
+The firmware is organized around STM32Cube-generated startup code, STM32 HAL peripheral drivers, FreeRTOS, and a modular application structure for the STM32F446RE. At a high level, the system repeatedly:
 
 1. Reads raw accelerometer and gyroscope data from the MPU6050 over I2C
 2. Applies calibration and unit conversion
 3. Estimates roll and pitch
 4. Sends telemetry over the configured serial interface
+
+These responsibilities are split across three FreeRTOS tasks rather than a single loop, as described below.
 
 ---
 
@@ -17,13 +19,15 @@ The firmware is organized around STM32Cube-generated startup code, STM32 HAL per
 
 ```mermaid
 flowchart LR
-    A[MPU6050 IMU] --> B[MPU6050 Driver]
-    B --> C[Calibration]
-    C --> D[Attitude Estimation]
-    D --> E[Telemetry Output]
+    A[MPU6050 IMU] --> B[SensorTask]
+    B -->|sensorQueue| C[AttitudeTask]
+    C --> D[Calibration + Unit Conversion]
+    D --> E[Attitude Estimation]
+    E -->|attitudeMutex| F[TelemetryTask]
+    F --> G[Telemetry Output]
 ```
 
-Raw sensor data is read from the MPU6050 through the driver layer, corrected by the calibration layer, processed by the attitude-estimation layer, and then transmitted as telemetry. The complementary filter is treated as part of the attitude-estimation stage rather than as a separate software module.
+Raw sensor data is read from the MPU6050 by `SensorTask` and pushed onto a queue. `AttitudeTask` consumes each sample, applies calibration and unit conversion, computes the accelerometer and gyroscope estimates, and applies the complementary filter. The resulting attitude state is published under a mutex so that `TelemetryTask` can safely snapshot it and transmit telemetry independently of the estimation rate. The complementary filter is treated as part of the attitude-estimation stage rather than as a separate software module.
 
 ---
 
@@ -86,18 +90,34 @@ Typical files:
 - `Core/Inc/attitude.h`
 - `Core/Src/attitude.c`
 
+### FreeRTOS Task Layer
+
+This layer implements the sensor acquisition, attitude estimation, and telemetry pipeline as three independent FreeRTOS tasks, coordinated through a queue and a mutex.
+
+Its responsibilities include:
+
+- Reading raw sensor samples on a fixed period and pushing them onto `sensorQueue`
+- Consuming queued samples, updating calibrated attitude estimates, and publishing them under `attitudeMutex`
+- Snapshotting the shared attitude state and transmitting CSV telemetry on a slower, independent period
+- Detecting stack overflow and heap allocation failures through FreeRTOS hook functions
+
+Typical files:
+
+- `Core/Inc/app_tasks.h`
+- `Core/Src/app_tasks.c`
+- `Core/Src/freertos.c`
+
 ### Main Application
 
-The main application coordinates the full pipeline.
+The main application coordinates startup and hands off execution to the FreeRTOS scheduler.
 
 Its responsibilities include:
 
 - Initializing the MCU and peripherals
 - Starting and configuring the MPU6050
 - Running calibration at startup
-- Executing the fixed-rate loop
-- Calling driver, calibration, and attitude functions
-- Formatting and transmitting telemetry
+- Creating the shared queue, mutex, and application tasks
+- Starting the FreeRTOS scheduler
 
 Typical files:
 
@@ -117,24 +137,22 @@ A typical startup sequence is:
 3. MPU6050 initialization
 4. Calibration
 5. Initial attitude setup
-6. Entry into the main loop
+6. Creation of the sensor queue, attitude mutex, and application tasks
+7. Start of the FreeRTOS scheduler
 
-Each stage depends on the previous one, so sensor reads and estimation begin only after the board, peripherals, and calibration are ready.
+Each stage depends on the previous one, so sensor reads and estimation begin only after the board, peripherals, and calibration are ready, and only once the scheduler has started running the tasks.
 
-### Main Loop
+### FreeRTOS Task Architecture
 
-After startup, the firmware repeatedly:
+Once the scheduler starts, three tasks run concurrently:
 
-1. Reads the current loop time
-2. Acquires raw IMU data
-3. Applies calibration and unit conversion
-4. Computes accelerometer roll and pitch
-5. Integrates gyroscope rates
-6. Applies the complementary filter
-7. Sends a telemetry line
-8. Waits for the next sample period
+- **SensorTask** — Runs at a fixed 100 Hz period. Acquires raw accelerometer and gyroscope data from the MPU6050 and pushes a combined sample onto `sensorQueue`.
+- **AttitudeTask** — Blocks on `sensorQueue`. For each received sample, applies calibration and unit conversion, computes the accelerometer and gyroscope estimates, applies the complementary filter, and publishes the updated attitude state under `attitudeMutex`.
+- **TelemetryTask** — Runs at a fixed, slower period (10 Hz). Snapshots the shared attitude state under `attitudeMutex` and transmits a CSV telemetry line over UART.
 
-This fixed pipeline keeps the sampling and estimation flow predictable.
+Running telemetry at a lower priority and slower rate than sensing and estimation keeps UART transmission from interfering with the deterministic timing of sample acquisition and attitude updates.
+
+This task-based pipeline replaces the single fixed-rate loop used in earlier versions of the STM32 firmware.
 
 ---
 
@@ -142,15 +160,15 @@ This fixed pipeline keeps the sampling and estimation flow predictable.
 
 Timing is especially important for gyroscope integration, because the quality of the estimate depends directly on the loop interval.
 
-In the STM32 environment, timing is typically managed using HAL-supported timing functions such as `HAL_GetTick()` or hardware timers, depending on the resolution required. This provides a cleaner path to consistent sampling and future expansion than an ad hoc polling loop.
+`SensorTask` runs on a fixed 100 Hz period using `vTaskDelayUntil()`, which keeps the sampling interval consistent even if individual iterations take slightly different amounts of time. `AttitudeTask` computes `dt` from this fixed sensor period rather than measuring elapsed time directly, since the sensor period is constant. `TelemetryTask` runs independently on its own fixed, slower period, so telemetry output rate is decoupled from the estimation rate.
 
 ---
 
 ## Telemetry
 
-The final stage of the architecture is telemetry output.
+The final stage of the architecture is telemetry output, handled by `TelemetryTask`.
 
-After each estimation cycle, the firmware formats the current time, accelerometer estimate, gyroscope estimate, and filtered estimate into a compact CSV line and sends it over the configured serial interface. This keeps output separate from the sensing and estimation logic and makes the system easier to maintain.
+On each telemetry period, the task snapshots the current accelerometer estimate, gyroscope estimate, filtered estimate, and associated sample timestamp under `attitudeMutex`, then formats them into a compact CSV line and sends it over the configured serial interface. This keeps output separate from the sensing and estimation logic and makes the system easier to maintain.
 
 ---
 
@@ -160,7 +178,8 @@ After each estimation cycle, the firmware formats the current time, acceleromete
 - **MPU6050 driver**: communicates with the IMU over I2C
 - **Calibration**: removes bias and converts to physical units
 - **Attitude**: estimates roll and pitch and applies the complementary filter
-- **Main application**: coordinates the loop and telemetry
+- **FreeRTOS task layer**: runs sensing, estimation, and telemetry as independent tasks coordinated through a queue and a mutex
+- **Main application**: initializes hardware, creates RTOS objects and tasks, and starts the scheduler
 
 ---
 
@@ -170,3 +189,4 @@ After each estimation cycle, the firmware formats the current time, acceleromete
 - [STM32F446RE Product Page — STMicroelectronics](https://www.st.com/en/microcontrollers-microprocessors/stm32f446re.html)
 - [UM1725 - Description of STM32F4 HAL and low-layer drivers — STMicroelectronics](https://www.st.com/resource/en/user_manual/um1725-description-of-stm32f4-hal-and-lowlayer-drivers-stmicroelectronics.pdf)
 - [HAL I2C APIs — STMicroelectronics](https://dev.st.com/stm32cube-docs/stm32u5-hal2/2.0.0-beta.1.1/docs/drivers/hal_drivers/i2c/hal_i2c_apis.html)
+- [FreeRTOS Kernel Documentation — FreeRTOS.org](https://www.freertos.org/Documentation/00-Overview)

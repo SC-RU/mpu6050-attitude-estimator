@@ -7,7 +7,7 @@ This project implements register-level MPU6050 bring-up, calibration, sensor dat
 The repository currently covers two versions of the same project:
 
 - An Arduino Nano Every version used for initial bring-up, calibration, validation, and attitude-estimation development
-- An STM32 version used to port the same pipeline to a more industry-standard embedded platform with improved timing control and a cleaner path toward higher-rate sampling and RTOS-based expansion
+- An STM32 version used to port the same pipeline to a more industry-standard embedded platform, now running on a FreeRTOS task-based architecture with improved timing control and a cleaner path toward higher-rate sampling
 
 Rather than relying on third-party MPU6050 libraries, all sensor communication, configuration, calibration, and attitude estimation are implemented from scratch using direct I2C register access and the MPU6050 datasheet.
 
@@ -22,6 +22,7 @@ Current capabilities include:
 - Gyroscope attitude integration
 - Complementary filtering
 - Fixed-rate sampling and timing control
+- FreeRTOS task-based architecture (STM32)
 - Modular software organization
 
 ***
@@ -179,6 +180,8 @@ Each field represents:
 2. Build and flash the firmware to the STM32 board.
 3. Open the configured serial/UART output to view the telemetry stream.
 
+The STM32 firmware runs on FreeRTOS, with sensor acquisition, attitude estimation, and telemetry output implemented as separate tasks.
+
 ***
 
 ## Repository Layout
@@ -262,7 +265,6 @@ It also served as a foundation for future projects involving sensor fusion, atti
 
 - Higher-rate sampling and performance optimization
 - STM32 refinement and cleanup
-- FreeRTOS task-based architecture
 
 ### Long-term
 

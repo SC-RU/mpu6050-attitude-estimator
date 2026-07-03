@@ -89,3 +89,43 @@ Observed behavior:
 - Filtered estimate remains stable while stationary
 
 Status: PASS
+
+---
+
+## FreeRTOS Pipeline Test
+
+The STM32 firmware was rebuilt with the sensor, attitude, and telemetry pipeline split into three FreeRTOS tasks (`SensorTask`, `AttitudeTask`, `TelemetryTask`), coordinated through a queue and a mutex.
+
+### Stack Overflow Detection
+
+An initial run with a 256-word `TelemetryTask` stack triggered `vApplicationStackOverflowHook()`, correctly identifying `TelemetryTask` as the offending task. Increasing `TELEMETRY_TASK_STACK_SIZE` to 512 words resolved the overflow.
+
+Status: PASS
+
+### Stack Headroom
+
+`uxTaskGetStackHighWaterMark()` was used to confirm stack margins after the fix, using the current stack sizes (256 words for `SensorTask` and `AttitudeTask`, 512 words for `TelemetryTask`):
+
+```text
+Stack headroom (words) - Sensor: 196, Attitude: 168, Telemetry: 243
+```
+
+Expected behavior:
+
+- Each task retains a reasonable margin of free stack under normal operation
+- No stack overflow hook is triggered during a sustained run
+
+Status: PASS
+
+### Telemetry Output Under RTOS
+
+A 10-second capture of `TelemetryTask` output was reviewed after the stack fix.
+
+Observed behavior:
+
+- CSV lines are emitted at the expected 10 Hz telemetry rate, with `time_MS` incrementing by 100 ms per line
+- Roll and pitch values respond appropriately to manual movement of the board
+- Values remain small and stable while the board is stationary
+- No stack overflow or malloc failure hooks were triggered during the capture
+
+Status: PASS

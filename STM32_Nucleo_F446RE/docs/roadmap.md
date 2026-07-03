@@ -11,6 +11,7 @@
 - Pitch estimation
 - Gyroscope integration
 - Complementary filtering
+- FreeRTOS task-based architecture (STM32)
 
 ### Immediate
 
@@ -21,7 +22,7 @@
 ### Near-term
 
 - Higher-rate sampling and performance optimization
-- FreeRTOS task-based architecture
+- Additional FreeRTOS tasks (e.g. logging, visualization output)
 
 ### Long-term
 

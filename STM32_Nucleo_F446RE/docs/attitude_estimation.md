@@ -22,6 +22,8 @@ The attitude estimator combines two sources of information:
 
 Each sensor has different strengths and weaknesses, so the final estimate is produced using a complementary filter.
 
+On the STM32 version, this estimation logic runs inside a dedicated `AttitudeTask`, which consumes raw samples from a queue populated by a separate sensor-acquisition task.
+
 ---
 
 ## Accelerometer Estimate
@@ -90,13 +92,21 @@ where:
 
 Accurate loop timing is essential because gyroscope integration depends directly on the value of `dt`.
 
-In this project, `dt` is computed from the elapsed time between iterations using `HAL_GetTick()`. Since `HAL_GetTick()` returns elapsed time in milliseconds, the difference between successive timestamps is divided by 1000.0 to convert the interval into seconds.
+In the Arduino version, `dt` is computed from the elapsed time between iterations using a millisecond timer. Since that timer returns elapsed time in milliseconds, the difference between successive timestamps is divided by 1000.0 to convert the interval into seconds.
 
 A generic form is:
 
 ```text
 dt = (currentTime - lastLoopTime) / 1000.0
 ```
+
+In the STM32 version, sensor acquisition runs inside `SensorTask` on a fixed 100 Hz period enforced by `vTaskDelayUntil()`. Because this period is constant by construction, `AttitudeTask` computes `dt` directly from the configured sensor period rather than measuring elapsed time on each iteration:
+
+```text
+dt = SENSOR_TASK_PERIOD_MS / 1000.0
+```
+
+Each raw sample carries the timestamp at which it was acquired, and this timestamp is propagated through calibration and estimation so that the resulting attitude snapshot corresponds to a specific sampling instant rather than the time at which telemetry happens to be sent.
 
 If the timing interval is inconsistent or scaled incorrectly, the gyroscope estimate will accumulate error even when the angular-rate measurements are correct.
 
@@ -125,6 +135,8 @@ This means:
 
 The filtered result is then used as the starting point for the next gyroscope integration step. This allows the gyroscope to dominate short-term motion while the accelerometer continuously corrects long-term drift.
 
+On the STM32 version, this fused result is published under a mutex so that a separate telemetry task can safely read it without interfering with the estimation task.
+
 ---
 
 ## Current Scope
@@ -149,3 +161,4 @@ The estimator is designed as a lightweight attitude solution for the STM32 Nucle
 - [HAL I2C APIs - STMicroelectronics](https://dev.st.com/stm32cube-docs/stm32u5-hal2/2.0.0-beta.1.1/docs/drivers/hal_drivers/i2c/hal_i2c_apis.html)
 - [STM32F4xx HAL Control Functions](https://mikrocontroller.ti.bfh.ch/halDoc/group__HAL__Exported__Functions__Group2.html)
 - [HAL TIM How to Use - STMicroelectronics](https://dev.st.com/stm32cube-docs/stm32u5-hal2/2.0.0-beta.1.1/docs/drivers/hal_drivers/tim/hal_tim_how_to_use.html)
+- [FreeRTOS Task Documentation - FreeRTOS.org](https://www.freertos.org/Documentation/02-Kernel/04-API-references/01-Task-creation/00-TaskHandle)

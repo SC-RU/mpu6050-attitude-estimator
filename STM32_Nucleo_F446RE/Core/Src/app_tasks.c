@@ -317,7 +317,6 @@ void AttitudeTask(void *argument)
 	    {
             accelAttitude       = updatedAccel;
             gyroOnlyAttitude    = updatedGyroOnly;
-	    	gyroAttitude        = updatedGyro;
             filteredAttitude    = updatedFiltered;
 
             // Publish filtered state back into gyroAttitude for next-step integration

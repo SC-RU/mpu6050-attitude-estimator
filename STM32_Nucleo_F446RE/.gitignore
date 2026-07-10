@@ -1,0 +1,21 @@
+build
+mx.scratch
+
+# Eclipse/CDT convention often blanket-ignores .settings/ by default.
+# Override that here since some files inside are worth keeping (see
+# exclusions below) - see individual comments for why each excluded
+# file is left out.
+!.settings
+
+# STM32CubeIDE (Eclipse CDT) built-in compiler spec detection cache.
+# Contains an env-hash tied to the local machine's toolchain install;
+# obsolete now that this project's primary build path is CMake/VS Code.
+.settings/language.settings.xml
+
+# Eclipse workspace-local project preference hashes, specific to the
+# local CubeIDE workspace. Not meaningful outside that environment.
+.settings/stm32cubeide.project.prefs
+
+# CubeIDE's Special Function Register viewer favorites/state.
+# Purely local UI state, not project configuration.
+.settings/com.st.stm32cube.ide.mcu.sfrview.prefs

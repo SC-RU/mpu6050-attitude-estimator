@@ -19,3 +19,6 @@ mx.scratch
 # CubeIDE's Special Function Register viewer favorites/state.
 # Purely local UI state, not project configuration.
 .settings/com.st.stm32cube.ide.mcu.sfrview.prefs
+
+docs/doxygen/
+doxygen_run.log

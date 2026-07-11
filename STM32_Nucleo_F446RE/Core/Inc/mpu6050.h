@@ -75,8 +75,11 @@
 // Driver constants
 // -----------------------------------------------------------------------------
 
-#define AXIS_DATA_SIZE           6U		///< X,Y,Z (2 bytes each)
-#define STARTUP_DELAY_MS         10U	///< Hardware settle delay in milliseconds
+#define AXIS_DATA_SIZE              6U      ///< X,Y,Z (2 bytes each)
+#define STARTUP_DELAY_MS            10U     ///< Hardware settle delay in milliseconds
+#define I2C_TRANSACTION_TIMEOUT_MS  5U      ///< ~5-6x worst-case transaction time at 100 kHz
+
+extern volatile uint32_t i2cFailureCount;   ///< I2C timeout/NACK count
 
 // -----------------------------------------------------------------------------
 // Sensor data structures
@@ -125,9 +128,9 @@ typedef struct
  */
 typedef struct
 {
-    AccelData accel;
-    GyroData  gyro;
-    uint32_t  time_MS;
+    AccelData accel;    ///< Raw accelerometer measurements
+    GyroData  gyro;     ///< Raw gyroscope measurements
+    uint32_t  time_MS;  ///< Timestamp in milliseconds since system start
 } SensorSample_t;
 
 // -----------------------------------------------------------------------------

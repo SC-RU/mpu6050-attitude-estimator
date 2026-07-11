@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
+
 #ifndef __MAIN_H
 #define __MAIN_H
 
@@ -27,9 +28,11 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 #include "FreeRTOS.h"
@@ -38,21 +41,25 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
+
 /* USER CODE BEGIN ET */
 
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
+
 /* USER CODE BEGIN EC */
 
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
+
 /* USER CODE BEGIN EM */
 
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
+
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
@@ -89,6 +96,7 @@ void reportStackHighWaterMarks(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
 #define USART_TX_Pin GPIO_PIN_2
@@ -105,6 +113,12 @@ void reportStackHighWaterMarks(void);
 #define SWO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+
+
+#define UART_TRANSMIT_TIMEOUT_MS  10U       ///< ~1.5x worst-case CSV line transmit time at 115200 baud
+
+extern volatile uint32_t uartFailureCount;  ///< UART transmit timeout count
+extern volatile uint32_t missedSampleCount; ///< SensorTask cycles with no valid sample
 
 /* USER CODE END Private defines */
 

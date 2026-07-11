@@ -102,6 +102,13 @@ Attitude gyroAttitude     = {0};	///< Corrected attitude estimate used for gyro 
 Attitude filteredAttitude = {0};	///< Complementary-filtered attitude estimate
 
 // -----------------------------------------------------------------------------
+// Fault counters
+// -----------------------------------------------------------------------------
+
+volatile uint32_t uartFailureCount  = 0U; ///< UART transmit timeout count
+volatile uint32_t missedSampleCount = 0U; ///< SensorTask cycles with no valid sample
+
+// -----------------------------------------------------------------------------
 // Application state
 // -----------------------------------------------------------------------------
 
@@ -545,7 +552,14 @@ void uart_print(const char *msg)
     return;
   }
 
-  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+  if (HAL_UART_Transmit(&huart2,
+                        (uint8_t *)msg,
+                         strlen(msg),
+                      UART_TRANSMIT_TIMEOUT_MS) != HAL_OK)
+  {
+    // Increment the UART failure counter for diagnostics.
+    uartFailureCount++;
+  }
 }
 
 // -----------------------------------------------------------------------------

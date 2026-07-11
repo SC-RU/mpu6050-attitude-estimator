@@ -22,12 +22,19 @@
 // -----------------------------------------------------------------------------
 
 #include "mpu6050.h"
+#include "stm32f4xx_hal_def.h"
 
 // -----------------------------------------------------------------------------
 // Driver handle
 // -----------------------------------------------------------------------------
 
-static I2C_HandleTypeDef *mpu6050_i2c = 0;
+static I2C_HandleTypeDef *mpu6050_i2c = 0; ///< Pointer to the HAL I2C handle used for MPU6050 communication
+
+// -----------------------------------------------------------------------------
+// Fault counter
+// -----------------------------------------------------------------------------
+
+volatile uint32_t i2cFailureCount   = 0U; ///< I2C timeout/NACK count
 
 // -----------------------------------------------------------------------------
 // Low-level register interface
@@ -35,40 +42,62 @@ static I2C_HandleTypeDef *mpu6050_i2c = 0;
 
 HAL_StatusTypeDef writeRegister(uint8_t reg, uint8_t value)
 {
-    // Send a register address followed by the
-    // value that should be written to it.
+    // Verify that the output pointer is valid
+    // before attempting the I2C transaction.
 
     if (mpu6050_i2c == 0)
     {
         return HAL_ERROR;
     }
 
-    return HAL_I2C_Mem_Write(mpu6050_i2c,
-                             MPU6050_ADDR_HAL,
-                             reg,
-                             I2C_MEMADD_SIZE_8BIT,
-                             &value,
-                             1,
-                             HAL_MAX_DELAY);
+    // Send a register address followed by the
+    // value that should be written to it.
+
+    HAL_StatusTypeDef status =  HAL_I2C_Mem_Write(mpu6050_i2c,
+                                            MPU6050_ADDR_HAL,
+                                            reg,
+                                            I2C_MEMADD_SIZE_8BIT,
+                                                 &value,
+                                                  1,
+                                               I2C_TRANSACTION_TIMEOUT_MS);
+
+    if (status != HAL_OK)
+    {
+        // Increment the I2C failure counter for diagnostics.
+        i2cFailureCount++;
+    }
+
+    return status;
 }
 
 HAL_StatusTypeDef readRegister(uint8_t reg, uint8_t *value)
 {
-    // Read a single register from the MPU6050
-    // through the configured HAL I2C peripheral.
+    // Send a register address followed by the
+    // value that should be written to it.
 
     if ((mpu6050_i2c == 0) || (value == 0))
     {
         return HAL_ERROR;
     }
 
-    return HAL_I2C_Mem_Read(mpu6050_i2c,
-                            MPU6050_ADDR_HAL,
-                            reg,
-                            I2C_MEMADD_SIZE_8BIT,
-                            value,
-                            1,
-                            HAL_MAX_DELAY);
+    // Read a single register from the MPU6050
+    // through the configured HAL I2C peripheral.
+
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(mpu6050_i2c,
+                                          MPU6050_ADDR_HAL,
+                                          reg,
+                                          I2C_MEMADD_SIZE_8BIT,
+                                               value,
+                                                1,
+                                             I2C_TRANSACTION_TIMEOUT_MS);
+    
+    if (status != HAL_OK)
+    {
+        // Increment the I2C failure counter for diagnostics.
+        i2cFailureCount++;
+    }
+
+    return status;
 }
 
 // -----------------------------------------------------------------------------
@@ -245,12 +274,12 @@ HAL_StatusTypeDef readRawAccel(AccelData *accel)
     // first accelerometer output register.
 
     if (HAL_I2C_Mem_Read(mpu6050_i2c,
-                         MPU6050_ADDR_HAL,
-                         ACCEL_XOUT_H,
-                         I2C_MEMADD_SIZE_8BIT,
-                         buffer,
+                   MPU6050_ADDR_HAL,
+                   ACCEL_XOUT_H,
+                   I2C_MEMADD_SIZE_8BIT,
+                        buffer,
                          AXIS_DATA_SIZE,
-                         HAL_MAX_DELAY) != HAL_OK)
+                      I2C_TRANSACTION_TIMEOUT_MS) != HAL_OK)
     {
         // Return a zero-initialized structure if
         // the I2C transaction was incomplete.
@@ -258,6 +287,9 @@ HAL_StatusTypeDef readRawAccel(AccelData *accel)
         accel->x = 0;
         accel->y = 0;
         accel->z = 0;
+
+        // Increment the I2C failure counter for diagnostics.
+        i2cFailureCount++;
 
         return HAL_ERROR;
     }
@@ -288,12 +320,12 @@ HAL_StatusTypeDef readRawGyro(GyroData *gyro)
     // first gyroscope output register.
 
     if (HAL_I2C_Mem_Read(mpu6050_i2c,
-                         MPU6050_ADDR_HAL,
-                         GYRO_XOUT_H,
-                         I2C_MEMADD_SIZE_8BIT,
-                         buffer,
+                   MPU6050_ADDR_HAL,
+                   GYRO_XOUT_H,
+                   I2C_MEMADD_SIZE_8BIT,
+                        buffer,
                          AXIS_DATA_SIZE,
-                         HAL_MAX_DELAY) != HAL_OK)
+                      I2C_TRANSACTION_TIMEOUT_MS) != HAL_OK)
     {
         // Return a zero-initialized structure if
         // the I2C transaction was incomplete.
@@ -301,6 +333,9 @@ HAL_StatusTypeDef readRawGyro(GyroData *gyro)
         gyro->x = 0;
         gyro->y = 0;
         gyro->z = 0;
+
+        // Increment the I2C failure counter for diagnostics.
+        i2cFailureCount++;
 
         return HAL_ERROR;
     }

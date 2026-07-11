@@ -60,14 +60,17 @@ void printTelemetryCSV(
     length = snprintf(
         buffer,
         sizeof(buffer),
-        "%lu,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\r\n",
+        "%lu,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%lu,%lu,%lu\r\n",
         (unsigned long)time_MS,
         accel->roll,
         accel->pitch,
         gyro->roll,
         gyro->pitch,
         filtered->roll,
-        filtered->pitch);
+        filtered->pitch,
+        (unsigned long)i2cFailureCount,
+        (unsigned long)uartFailureCount,
+        (unsigned long)missedSampleCount);
         
     // Check that the length of the formatted string will not exceed the buffer size.
     // snprintf() truncates the output if the buffer is too small, so this check prevents partial lines from being transmitted.
@@ -188,6 +191,9 @@ void SensorTask(void *argument)
 
 	    if (readRawAccel(&sample.accel) != HAL_OK)
 	    {
+            // Increment the missed sample counter for diagnostics.
+            missedSampleCount++;
+            
             continue;
 	    }
 
@@ -196,6 +202,9 @@ void SensorTask(void *argument)
 
 	    if (readRawGyro(&sample.gyro) != HAL_OK)
 	    {
+            // Increment the missed sample counter for diagnostics.
+            missedSampleCount++;
+            
             continue;
 	    }
 

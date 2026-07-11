@@ -1,8 +1,8 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
+  * @file   freertos.c
+  * @brief  Code for freertos applications
   ******************************************************************************
   * @attention
   *

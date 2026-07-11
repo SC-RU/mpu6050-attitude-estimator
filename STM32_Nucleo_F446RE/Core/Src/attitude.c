@@ -20,9 +20,9 @@
 // Includes
 // -----------------------------------------------------------------------------
 
+#include <math.h>
 #include "attitude.h"
 #include "mpu6050.h"
-#include <math.h>
 
 // -----------------------------------------------------------------------------
 // Accelerometer attitude estimation
